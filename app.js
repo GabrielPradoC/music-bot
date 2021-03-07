@@ -19,37 +19,24 @@ const ytdl = require('ytdl-core');
 
 const client = new Discord.Client();
 
-var vidData = require("vid_data");
+let vidData = require('vid_data');
 
 const queue = new Map();
 
-client.once('ready', () => {
-	console.log('Ready!');
-});
+client.once('ready', () => console.log('Ready!'));
 
-client.on('error', error => {
-    console.log('The WebSocket encountered an error:', error);
-});
+client.on('error', error => console.log('The WebSocket encountered an error:', error));
 
+client.on('reconnecting', () => console.log('Reconnecting!'));
 
-client.on('reconnecting', () => {
-	console.log('Reconnecting!');
-});
+client.on('disconnect', () => console.log('Disconnect!'));
 
-client.on('disconnect', () => {
-	console.log('Disconnect!');
-	
-});
-
-client.on('unhandledRejection', error => {
-	console.log('Unhandled promise rejection:'+ error);
-});
+client.on('unhandledRejection', error => console.log('Unhandled promise rejection:'+ error));
 
 
 client.on('message', async message => {
-	if (message.author.bot) return;
-	if (!message.content.startsWith(prefix)) return;
-	var argsa = message.content.slice(prefix.length).trim().split(/ +/);
+	if (message.author.bot || !message.content.startsWith(prefix)) return;
+	let argsa = message.content.slice(prefix.length).trim().split(/ +/);
 
 	const serverQueue = queue.get(message.guild.id);
 
@@ -79,11 +66,10 @@ client.on('message', async message => {
 
 async function teste(message, argsa, serverQueue) {
 	const voiceChannel = message.member.voice.channel;
-		if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
+		if (!voiceChannel) message.channel.send('You need to be in a voice channel to play music!');
 		const permissions = voiceChannel.permissionsFor(message.client.user);
-		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-		return message.channel.send('I need the permissions to join and speak in your voice channel!');
-		}
+		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) message.channel.send('I need the permissions to join and speak in your voice channel!');
+
 		 argsa.shift();
 		
 		 
@@ -93,7 +79,7 @@ async function teste(message, argsa, serverQueue) {
 				console.log('é uma playlist');
 				let playid = await vidData.get_playlist_videos(argsa.join(''));
 				playid.forEach(id=>{
-					list.push('https://www.youtube.com/watch?v='+id);
+					list.push(`https://www.youtube.com/watch?v=${id}`);
 				})
 				console.log(list);
 				if (!serverQueue) {
@@ -172,15 +158,15 @@ async function teste(message, argsa, serverQueue) {
 }
 
 function skip(message, serverQueue) {
-	if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to skip the music!');
-	if (!serverQueue) return message.channel.send('There is no song that I could skip!');
+	if (!message.member.voice.channel) message.channel.send('You have to be in a voice channel to skip the music!');
+	if (!serverQueue) message.channel.send('There is no song that I could skip!');
 	serverQueue.songs.shift();
 	play(message.guild, serverQueue.songs[0]);
 }
 
 
 function stop(message, serverQueue) {
-	if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to stop the music!');
+	if (!message.member.voice.channel) message.channel.send('You have to be in a voice channel to stop the music!');
 	serverQueue.songs = [];
 	serverQueue.connection.dispatcher.destroy();
 	serverQueue.songs.shift();
@@ -221,4 +207,4 @@ async function play(guild, song) {
 	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 }
 
-client.login('');
+client.login(token);

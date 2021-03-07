@@ -2,9 +2,9 @@
   "name": "music-bot",
   "version": "1.0.0",
   "description": "My first functional discord music bot.",
-  "main": "example.js",
+  "main": "app.js",
   "scripts": {
-    "test": "node example.js"
+    "run": "node app.js"
   },
   "author": "Kisuco",
   "license": "ISC",
