@@ -4,11 +4,25 @@
 // testar se ele pausa/"despausa" a música em mais de 1 servidor (tenho quase ctz que n)
 // colocar remove nas músicas da queue
 const Discord = require('discord.js');
+
 const {
 	prefix,
 	token,
+	spotify_client_id,
+	spotify_client_secret,
+	youtube_api_key
 } = require('./config.json');
+
 const ytdl = require('ytdl-core');
+
+const axios = require('axios');
+
+const google = require('googleapis');
+
+const youtube = new google.youtube_v3.Youtube({
+	version: 'v3',
+	auth: youtube_api_key
+})
 
 const client = new Discord.Client();
 
@@ -36,7 +50,8 @@ client.on('message', async message => {
 	const serverQueue = queue.get(message.guild.id);
 
 	if (message.content.startsWith(`${prefix}play`)) {
-		inputHandler(message, argsa, serverQueue);		
+		argsa.shift();
+		inputHandler(message, argsa.join(' '), serverQueue);		
 	} else if (message.content.startsWith(`${prefix}skip`)) {
 		skip(message, serverQueue);
 	} else if (message.content.startsWith(`${prefix}stop`)) {
@@ -50,6 +65,9 @@ client.on('message', async message => {
 		resume(message, serverQueue);
 	} else if(message.content.startsWith(`${prefix}np`)){
 		message.channel.send(`Now playing: **${serverQueue.nowPlaying}**`);
+	}else if(message.content.startsWith(`${prefix}remove`)){
+		if(argsa[1] <= 0 || !argsa[1]) return message.channel.send(`Invalid index.`);
+		serverQueue.songs = removeMusic(serverQueue, message, argsa[1]-1);
 	}
 });
 
@@ -59,7 +77,7 @@ async function inputHandler(message, argsa, serverQueue) {
 		const permissions = voiceChannel.permissionsFor(message.client.user);
 		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) message.channel.send('I need the permissions to join and speak in your voice channel!');
 		let list = [];
-			let messageArgs = argsa[1].toString();
+			let messageArgs = argsa;
 			if(messageArgs.includes('playlist?list')){
 				const playid = await ytpl(messageArgs)
 				let { items } = playid;
@@ -71,6 +89,8 @@ async function inputHandler(message, argsa, serverQueue) {
 				const singleVideoInfo = await ytdl.getInfo(messageArgs);
 				list.push(singleVideoInfo.videoDetails);
 				linkHandler(message, list, serverQueue, queue, voiceChannel);
+			}else if(messageArgs.includes('https://open.spotify.com/')){			
+				spotifyLinkHandler(messageArgs, message, serverQueue);
 			}else{
 				message.channel.send('Invalid arguments, need to be either a youtube playlist link or a video link.');
 				return;
@@ -108,6 +128,7 @@ async function play(guild, song, message) {
 
 	if (!song) {
 		serverQueue.voiceChannel.leave();
+		message.channel.send('Queue is empty, leaving the voice channel.');
 		queue.delete(guild.id);
 		return;
 	}
@@ -159,12 +180,13 @@ async function linkHandler(message, list, serverQueue,queue, voiceChannel){
 			return message.channel.send(err);
 		}	
 	}else{
+		let textToDisplay = list.length >= 2? `${list.length} songs added to the queue!` : `**${list[0].title}** has been added to the queue!`;
 		for(const item of list){
 			item.url = item.shorturl ? item.shorturl : item.video_url;
+			item.duration = item.durationSec ? item.durationSec : item.lengthSeconds;
 			serverQueue.songs.push(item);
-			message.channel.send(`**${item.title}** has been added to the queue!`);
 		}
-		
+		message.channel.send(textToDisplay);
 	}
 }
 
@@ -178,11 +200,14 @@ async function queueDisplayHandler(message, queue){
 	message.channel.send(responseMsg.join(''));
 }
 
-//        TO DO
-
-/* function removeMusic(queue){
-	queue.songs
-} */
+function removeMusic(queue, message, args){
+	let removedSong = queue.songs.splice(args, 1);
+	message.channel.send(`Removed **${removedSong[0].title}** from the queue.`);
+	if(removedSong[0].title === queue.nowPlaying){
+		play(message.guild, queue.songs[0], message);
+	}
+	return queue.songs;
+}
 
 function timeParser(time){
 	let minutes = Math.floor(time/60);
@@ -193,6 +218,130 @@ function timeParser(time){
 
 function str_pad_left(string,pad,length) {
     return (new Array(length+1).join(pad)+string).slice(-length);
+}
+
+async function spotifySingleTrackHandler(spotifyID, message, queue){
+	const authResponse = await axios({
+		method: 'post',
+		url: 'https://accounts.spotify.com/api/token',
+		data: 'grant_type=client_credentials',
+		headers: {
+			'Authorization': 'Basic ' + (Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64')),
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		json: true
+	})
+	.catch(err=>{
+		console.log(err);
+	})
+
+	if(authResponse.status === 200){
+		const dataResponse = await axios({
+			method: 'get',
+			url: `https://api.spotify.com/v1/tracks/${spotifyID}`,
+			headers: {
+				'Authorization': `Bearer ${authResponse.data.access_token}`,
+			},
+			json: true
+		})
+		const spotifyData = dataResponse.data;
+		const musicName = `${spotifyData.name}`;
+		ytSearch(musicName, message, queue);		
+	}else{
+		message.channel.send('Couldn\'t fetch the track, try again later');
+		console.log(authResponse.status+' An error ocurred while fetching a track!');
+	}
+}
+
+async function spotifyPlaylistHandler(playlistId, message, serverQueue){
+	
+		const authResponse = await axios({
+		method: 'post',
+		url: 'https://accounts.spotify.com/api/token',
+		data: 'grant_type=client_credentials',
+		headers: {
+			'Authorization': 'Basic ' + (Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64')),
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		json: true
+	}).catch((err)=>{
+		console.log(authResponse.status+' '+err);
+	})
+
+
+	if(authResponse.status === 200){
+			const dataResponse = await axios({
+			method: 'get',
+			url: `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+			params: {
+				market: 'BR',
+				fields: 'items(track(name%2C%20artists(name)))',
+				limit: 99
+			},
+			headers: {
+				'Authorization': `Bearer ${authResponse.data.access_token}`,
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			json: true
+		}).catch((err)=>{
+			console.log(dataResponse.status+' '+err);
+		});
+		const spotifyData = dataResponse.data;
+		const trackList = [];
+		console.log(spotifyData.items.length);
+		for(const track of spotifyData.items){
+			let searchRes = ytSearch(track.track.name, message, serverQueue, 1)
+			trackList.push(searchRes);
+		}
+		console.log(trackList);
+		return;
+		const voiceChannel = message.member.voice.channel;
+		if (!voiceChannel) message.channel.send('You need to be in a voice channel to play music!');
+		const permissions = voiceChannel.permissionsFor(message.client.user);
+		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) message.channel.send('I need the permissions to join and speak in your voice channel!');
+		linkHandler(message, trackList, serverQueue, queue, voiceChannel);
+	}else{
+		message.channel.send('Couldn\'t fetch the playlist, try again later');
+		console.log(authResponse.status+' An error ocurred while fetching a track!');
+	}
+}
+
+/////////////////////////////////////////////  need to change this later
+
+function ytSearch(searchString, message,  queue, shouldReturn = 0){
+	let results = youtube.search.list({
+		part: 'snippet',
+		q: searchString,
+		maxResults: 1
+	}, async function(err, data){
+		if(err) console.log(err);
+		if(data){
+			let ytSearchQ = await axios({
+				method: 'get',
+				url: data.request.responseURL,
+				json: true
+			})
+			const video = ytSearchQ.data.items;
+			let string = `https://www.youtube.com/watch?v=${video[0].id.videoId}`;
+			console.log(string)
+			if(shouldReturn === 1){				
+				return string;
+			}	
+			inputHandler(message, string, queue);
+		}
+	})
+}
+
+///////////////////////////////////////////////////
+function spotifyLinkHandler(link, message, queue){
+	if(link.includes('/track/')){
+	let trackId = link.slice(link.lastIndexOf('track/')+6, link.indexOf('?si'));
+		spotifySingleTrackHandler(trackId, message, queue);
+	}else if(link.includes('/playlist/')){
+		let playlistId = link.slice(link.lastIndexOf('playlist/')+9, link.indexOf('?si'));
+		spotifyPlaylistHandler(playlistId, message, queue)
+	}
 }
 
 client.login(token);
