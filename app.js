@@ -1,7 +1,5 @@
 // *TODO*
-// criar um comando de queue que mostre o título e duração da música com link (embed) (50% done)
-// mudar o nome do bot
-
+// criar um comando de queue que mostre o título e duração da música com link (embed) (85% done)
 const Discord = require('discord.js');
 
 const {
@@ -28,12 +26,12 @@ client.on('disconnect', () => console.log('Disconnect!'));
 
 client.on('message', message => {
 	if (message.author.bot || !message.content.startsWith(prefix)) return;
-	let argsa = message.content.slice(prefix.length).trim().split(/ +/);
+	let args = message.content.slice(prefix.length).trim().split(/ +/);
 	const serverQueue = queue.get(message.guild.id);
-	switch(argsa[0]){
+	switch(args[0]){
 		case 'play':
-			argsa.shift();
-			inputHandler(message, argsa.join(' '), serverQueue);	
+			args.shift();
+			inputHandler(message, args.join(' '), serverQueue);	
 			break;
 		case 'skip':
 			skip(message, serverQueue);
@@ -42,8 +40,8 @@ client.on('message', message => {
 			stop(message, serverQueue);
 			break;
 		case 'queue':
-			argsa.shift();
-			queueDisplayHandler(message, serverQueue.songs, argsa[0]);
+			args.shift();
+			queueDisplayHandler(message, serverQueue.songs, args[0]);
 			break;
 		case 'pause':
 			pause(message, serverQueue);
@@ -56,15 +54,15 @@ client.on('message', message => {
 			break;
 		case 'remove':
 			if (!serverQueue) return message.channel.send('There\'s no songs in the queue.');
-			if(argsa[1] <= 0 || !argsa[1] || argsa[1] > serverQueue.songs.length || isNaN(argsa[1])) return message.channel.send(`Invalid index.`);
-			serverQueue.songs = removeMusic(serverQueue, message, argsa[1]-1);
+			if(args[1] <= 0 || !args[1] || args[1] > serverQueue.songs.length || isNaN(args[1])) return message.channel.send(`Invalid index.`);
+			serverQueue.songs = removeMusic(serverQueue, message, args[1]-1);
 			break;
 	}
 });
 
 
 
-async function inputHandler(message, argsa, serverQueue) {
+async function inputHandler(message, args, serverQueue) {
 	const voiceChannel = message.member.voice.channel;
 		if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
 		let isPaused = false;
@@ -72,15 +70,15 @@ async function inputHandler(message, argsa, serverQueue) {
 		const permissions = voiceChannel.permissionsFor(message.client.user);
 		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send('I need the permissions to join and speak in your voice channel!');
 		let list = [];
-			if(argsa.includes('playlist?list')){
-				const playid = await ytpl(argsa)
+			if(args.includes('playlist?list')){
+				const playid = await ytpl(args)
 				let { items } = playid;
 				for(const obj of items){
 					list.push(obj);
 				};
 				linkHandler(message, list, serverQueue, queue, voiceChannel);
-			}else if(argsa.includes('https://www.youtube.com/watch?v=')){
-				const singleVideoInfo = await ytdl.getInfo(argsa);
+			}else if(args.includes('https://www.youtube.com/watch?v=')){
+				const singleVideoInfo = await ytdl.getInfo(args);
 				list.push(singleVideoInfo.videoDetails);
 				linkHandler(message, list, serverQueue, queue, voiceChannel);
 			}else if(isPaused){
