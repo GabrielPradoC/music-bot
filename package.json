@@ -1,6 +1,6 @@
 {
   "name": "music-bot",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "My first functional discord music bot.",
   "main": "app.js",
   "scripts": {
@@ -10,11 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/opus": "^0.1.0",
-    "axios": "^0.21.1",
-    "discord.js": "^12.1.1",
-    "ffmpeg-static": "^4.1.0",
-    "googleapis": "^67.1.1",
-    "vid_data": "^1.0.0",
+    "ffmpeg-static": "^4.1.0"
+  },
+  "devDependencies": {
+    "discord.js": "^12.5.1",
     "ytdl-core": "^4.5.0",
     "ytpl": "^2.0.5"
   }
