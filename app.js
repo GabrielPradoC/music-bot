@@ -62,6 +62,9 @@ client.on('message', message => {
 			if(args[1] <= 0 || !args[1] || args[1] > serverQueue.songs.length || isNaN(args[1])) return message.channel.send(`Invalid index.`);
 			serverQueue.songs = removeMusic(serverQueue, message, args[1]-1);
 			break;
+		case 'help':
+			message.channel.send(`\`\`\`Commands:\n${prefix}play (youtube link)\n${prefix}skip\n${prefix}stop\n${prefix}queue\n${prefix}pause\n${prefix}resume\n${prefix}np\n${prefix}remove (index)\`\`\``)
+			break;
 	}
 });
 
