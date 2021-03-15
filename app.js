@@ -15,7 +15,10 @@ const ytpl = require('ytpl');
 
 const queue = new Map();
 
-client.once('ready', () => console.log(`Ready! ${client.user.username}`));
+client.once('ready', () => {
+	console.log(`Ready! ${client.user.username}`);
+	client.user.setActivity();
+});
 
 client.on('error', error => console.log('The WebSocket encountered an error:'+ error));
 
@@ -130,6 +133,7 @@ function play(guild, song, message) {
 	const serverQueue = queue.get(guild.id);
 	if (!song) {
 		serverQueue.voiceChannel.leave();
+		client.user.setActivity();
 		message.channel.send('Queue is empty, leaving the voice channel.');
 		queue.delete(guild.id);
 		return;
@@ -143,7 +147,7 @@ function play(guild, song, message) {
 		.on('error', error => {
 			console.error(error);
 		});
-
+	client.user.setActivity(`${song.title}`, { type: 'LISTENING' });
 	message.channel.send(`Now playing: **${song.title}** | **${song.duration}**`);
 	serverQueue.nowPlaying = song.title;
 	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
@@ -153,9 +157,7 @@ async function linkHandler(message, list, serverQueue,queue, voiceChannel){
 	if(serverQueue && message.member.voice.channel.id != serverQueue.voiceChannel.id) return message.channel.send('You need to be in the same voice channel as the bot to add new songs.');
 	if (!serverQueue) {
 		const queueConstruct = {
-			textChannel: message.channel,
 			voiceChannel: voiceChannel,
-			requestedBy: message.author,
 			connection: null,
 			nowPlaying: null,
 			nowPlayingTimeLeft: null,
@@ -183,7 +185,7 @@ async function linkHandler(message, list, serverQueue,queue, voiceChannel){
 	}else{
 		let textToDisplay = list.length >= 2? `${list.length} songs added to the queue!` : `**${list[0].title}** has been added to the queue!`;
 		for(const item of list){
-			item.url = item.shorturl ? item.shorturl : item.video_url;
+			item.url = item.shortUrl ? item.shortUrl : item.video_url;
 			item.duration = item.durationSec ? timeParser(item.durationSec) : timeParser(item.lengthSeconds);
 			serverQueue.songs.push(item);
 		}
