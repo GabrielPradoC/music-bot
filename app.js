@@ -1,11 +1,10 @@
-// *TODO*
-// criar um comando de queue que mostre o título e duração da música com link (embed) (85% done)
 const Discord = require('discord.js');
 
-const {
-	prefix,
-	token
-} = require('./config.json');
+const token = process.env.AUTH;
+
+const prefix = process.env.PREFIX;
+
+const pfpUrl = process.env.PFP_URL;
 
 const ytdl = require('ytdl-core');
 
@@ -16,6 +15,9 @@ const ytpl = require('ytpl');
 const queue = new Map();
 
 client.once('ready', () => {
+	if(pfpUrl){
+		client.user.setAvatar(pfpUrl);
+	}	
 	console.log(`Ready! ${client.user.username}`);
 	client.user.setActivity();
 });
