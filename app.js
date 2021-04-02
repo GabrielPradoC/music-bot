@@ -19,7 +19,7 @@ client.once('ready', () => {
 		client.user.setAvatar(pfpUrl);
 	}	
 	console.log(`Ready! ${client.user.username}`);
-	client.user.setActivity();
+	client.user.setActivity('');
 });
 
 client.on('error', error => console.log('The WebSocket encountered an error:'+ error));
@@ -138,7 +138,7 @@ function play(guild, song, message) {
 	const serverQueue = queue.get(guild.id);
 	if (!song) {
 		serverQueue.voiceChannel.leave();
-		client.user.setActivity();
+		client.user.setActivity('');
 		message.channel.send('Queue is empty, leaving the voice channel.');
 		queue.delete(guild.id);
 		return;
