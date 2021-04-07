@@ -4,8 +4,6 @@ const token = process.env.AUTH;
 
 const prefix = process.env.PREFIX;
 
-const pfpUrl = process.env.PFP_URL;
-
 const ytdl = require('ytdl-core');
 
 const client = new Discord.Client();
@@ -27,9 +25,6 @@ class queueConstructor{
 const queue = new Map();
 
 client.once('ready', () => {
-	if(pfpUrl){
-		client.user.setAvatar(pfpUrl);
-	}	
 	console.log(`Ready! ${client.user.username}`);
 });
 
