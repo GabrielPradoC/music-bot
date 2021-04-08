@@ -90,7 +90,7 @@ async function inputHandler(message, args, serverQueue) {
 					let { items } = playid;
 					for(const obj of items){
 						list.push(obj);
-					};
+					}
 				} catch (error) {
 					console.log(error);
 					message.channel.send(error);
@@ -136,7 +136,7 @@ function pause(message, serverQueue){
 	if(message.member.voice.channel.id != serverQueue.voiceChannel.id) return message.channel.send('You need to be in the same voice channel as the bot to pause the music.');
 	serverQueue.connection.dispatcher.pause(true);
 	return message.channel.send('Music paused.');
-};
+}
 
 function resume(message, serverQueue){
 	if(!serverQueue) return message.channel.send('There is no music to resume.');
@@ -148,7 +148,7 @@ function resume(message, serverQueue){
 	}else{
 		message.channel.send('Music isn\'t paused.')
 	}	
-};
+}
 
 function play(guildId, song, message) {
 	const serverQueue = queue.get(guildId);
@@ -212,7 +212,7 @@ function queueDisplayHandler(message, queue, argsPage = 1){
 	const startingPos = 10*(argsPage-1);	
 	let responseMsg = [];	
 	for(let i = 0;i<maxSongsToDisplay;i++){
-			if(!queue[startingPos+i]){ break };
+			if(!queue[startingPos+i]){ break }
 			responseMsg.push(`**${startingPos+i+1} - ${queue[startingPos+i].title} | ${queue[startingPos+i].duration}** \n`);
 	}
 	if(queueLength> maxSongsToDisplay){
