@@ -234,10 +234,11 @@ function removeMusic(queue, message, args){
 function timeParser(time){
 	let minutes = Math.floor(time/60);
 	let seconds = time %60;
-	var finalTime = str_pad_left(minutes,'0',2)+':'+str_pad_left(seconds,'0',2);
+	let finalTime = str_pad_left(minutes,'0',2)+':'+str_pad_left(seconds,'0',2);
 	return finalTime;
 }
 
+// eslint-disable-next-line camelcase
 function str_pad_left(string,pad,length) {
     return (new Array(length+1).join(pad)+string).slice(-length);
 }
