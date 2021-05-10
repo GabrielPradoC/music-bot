@@ -1,3 +1,4 @@
+require('dotenv').config()
 const Discord = require('discord.js');
 
 const token = process.env.AUTH;
@@ -75,20 +76,18 @@ client.on('message', message => {
 });
 
 async function inputHandler(message, args, serverQueue) {
-	const voiceChannel = message.member.voice.channel;
+		const voiceChannel = message.member.voice.channel;
 		if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
 		let isPaused = false;
 		if(serverQueue) isPaused = serverQueue.connection.dispatcher.paused;		
 		const permissions = voiceChannel.permissionsFor(message.client.user);
 		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send('I need the permissions to join and speak in your voice channel!');
-		let list = [];
+		const list = [];
 			if(args.includes('https://www.youtube.com/playlist?list=')){
 				try {
-					const playid = await ytpl(args)
+					const playid = await ytpl(args);
 					let { items } = playid;
-					for(const obj of items){
-						list.push(obj);
-					}
+					list.push(...items);
 				} catch (error) {
 					console.log(error);
 					message.channel.send(error);
@@ -171,7 +170,7 @@ function play(guildId, song, message) {
 	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 }
 
-async function linkHandler(message, list, serverQueue,queue, voiceChannel){
+async function linkHandler(message, list, serverQueue, queue, voiceChannel){
 	if(serverQueue && message.member.voice.channel.id != serverQueue.voiceChannel.id) return message.channel.send('You need to be in the same voice channel as the bot to add new songs.');
 	if (!serverQueue) {
 		const queueConstruct = new queueConstructor(voiceChannel);
@@ -236,7 +235,6 @@ function timeParser(time){
 	return finalTime;
 }
 
-// eslint-disable-next-line camelcase
 function str_pad_left(string,pad,length) {
     return (new Array(length+1).join(pad)+string).slice(-length);
 }
