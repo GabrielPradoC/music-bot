@@ -4,7 +4,8 @@
   "description": "My first functional discord music bot.",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "start:dev": "tsc app.ts && node app.js"
   },
   "author": "Kisuco",
   "license": "ISC",

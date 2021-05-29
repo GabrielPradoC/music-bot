@@ -5,3 +5,4 @@ scrap
 .eslintrc.json
 .env
 discard
+comment*
