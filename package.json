@@ -10,7 +10,7 @@
   "author": "Kisuco",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/opus": "^0.1.0",
+    "@discordjs/opus": "^0.8.0",
     "discord.js": "^12.5.1",
     "ffmpeg-static": "^4.1.0",
     "ytdl-core": "^4.5.0",
